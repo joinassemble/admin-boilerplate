@@ -1,0 +1,33 @@
+# deps
+node_modules
+.pnpm-store
+
+# build
+dist
+.svelte-kit
+.vite
+
+# wrangler
+.wrangler
+.dev.vars
+.dev.vars.*
+
+# tauri (later plan)
+target
+
+# os
+.DS_Store
+Thumbs.db
+
+# editors
+.vscode
+.idea
+*.swp
+
+# superpowers
+.superpowers/
+
+# env
+.env
+.env.local
+.env.*.local
