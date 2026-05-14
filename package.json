@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite",
     "dev:worker": "wrangler dev",
+    "dev:all": "pnpm exec concurrently -k -p \"[{name}]\" -n vite,worker -c \"cyan,magenta\" \"pnpm dev\" \"pnpm dev:worker\"",
     "build": "vite build",
     "preview": "wrangler dev --local",
     "deploy": "vite build && wrangler deploy",
@@ -26,6 +27,7 @@
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^20.0.0",
+    "concurrently": "^9.2.1",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "tailwindcss": "^4.0.0",
