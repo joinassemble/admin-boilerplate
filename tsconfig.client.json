@@ -3,6 +3,7 @@
     "target": "es2022",
     "module": "es2022",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
     "lib": ["es2023", "dom", "dom.iterable"],
     "types": ["svelte", "vite/client"],
     "strict": true,
@@ -13,7 +14,11 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": false,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "$client/*": ["src/client/*"],
+      "$shared/*": ["src/shared/*"]
+    }
   },
   "include": ["src/client/**/*.ts", "src/client/**/*.svelte", "src/shared/**/*.ts"]
 }
