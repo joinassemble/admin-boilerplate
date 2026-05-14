@@ -80,4 +80,24 @@ describe('magic-link flow (allowlist policy)', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it('magic-link URL uses the request origin when PUBLIC_URL is unset', async () => {
+    // Regression: previously fell back to hardcoded 'http://localhost:5173',
+    // which would leak into production emails if PUBLIC_URL was forgotten.
+    // We capture what the ConsoleProvider logs, which contains the URL.
+    const logSpy = vi.spyOn(console, 'log');
+    logSpy.mockClear();
+
+    const res = await SELF.fetch('https://my-deployment.workers.dev/auth/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'dev@localhost' }),
+    });
+    expect(res.status).toBe(200);
+
+    const logged = logSpy.mock.calls.flat().join(' ');
+    // No PUBLIC_URL set in test env → falls back to the request's origin.
+    expect(logged).toContain('https://my-deployment.workers.dev/auth/callback?token=');
+    expect(logged).not.toContain('http://localhost:5173');
+  });
 });

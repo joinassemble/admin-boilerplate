@@ -94,4 +94,37 @@ describe('DomainAllowlistPolicy', () => {
     expect(u?.email).toBe('first@example.com');
     expect(u?.org_id).toBe('example');
   });
+
+  it('rejects emails with multiple @ symbols (domain-suffix bypass attempt)', async () => {
+    // Regression: a naive split('@')[1] would extract 'example.com' from
+    // 'attacker@example.com@evil.test' and falsely allow the request.
+    const p = new DomainAllowlistPolicy(env.DB, {
+      ADMIN_EMAILS: '',
+      ALLOWED_DOMAINS: 'example.com',
+    });
+    const r = await p.evaluate('attacker@example.com@evil.test', {});
+    expect(r.allowed).toBe(false);
+  });
+
+  it('rejects emails with whitespace or no local part', async () => {
+    const p = new DomainAllowlistPolicy(env.DB, {
+      ADMIN_EMAILS: '',
+      ALLOWED_DOMAINS: 'example.com',
+    });
+    expect((await p.evaluate('@example.com', {})).allowed).toBe(false);
+    expect((await p.evaluate('user@', {})).allowed).toBe(false);
+    expect((await p.evaluate('user @example.com', {})).allowed).toBe(false);
+  });
+
+  it('still admits a bootstrap admin even with a malformed local-domain split', async () => {
+    // Defensive: if ADMIN_EMAILS contains an exact literal (whatever its
+    // shape), bootstrap-admin lookup is exact-match and must still work.
+    const p = new DomainAllowlistPolicy(env.DB, {
+      ADMIN_EMAILS: 'literal-ada@example.com',
+      ALLOWED_DOMAINS: 'example.com',
+    });
+    const r = await p.evaluate('literal-ada@example.com', {});
+    expect(r.allowed).toBe(true);
+    expect(r.role).toBe('admin');
+  });
 });

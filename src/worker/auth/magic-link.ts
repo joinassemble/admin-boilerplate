@@ -67,9 +67,15 @@ export async function requestMagicLink(c: Context<{ Bindings: Env }>): Promise<R
     expirationTtl: MAGIC_TOKEN_TTL_SECONDS,
   });
 
-  // Send the email.
+  // Send the email. Prefer PUBLIC_URL (set by the operator) so emails always
+  // point at the canonical origin even if the Worker is hit via a Cloudflare
+  // preview URL or workers.dev subdomain. Fall back to the current request's
+  // origin so dev (and forks that forgot to set PUBLIC_URL — or left it as
+  // an empty string) still get a working callback rather than a hardcoded
+  // localhost link landing in a production inbox. `||` (not `??`) so that
+  // PUBLIC_URL='' is treated the same as unset.
   const provider = getEmailProvider(env);
-  const baseUrl = env.PUBLIC_URL ?? 'http://localhost:5173';
+  const baseUrl = env.PUBLIC_URL || new URL(c.req.url).origin;
   await provider.sendMagicLink({
     email,
     magicLinkUrl: `${baseUrl}/auth/callback?token=${token}`,

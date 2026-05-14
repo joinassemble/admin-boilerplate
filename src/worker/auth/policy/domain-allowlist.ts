@@ -41,6 +41,22 @@ export class DomainAllowlistPolicy implements AccessPolicy {
   async evaluate(email: string, _ctx: AccessContext): Promise<AccessDecision> {
     const lower = email.toLowerCase();
 
+    // Validate email structure FIRST. Reject anything that isn't exactly
+    // `local@domain` with no spaces and no second `@`. This prevents a domain
+    // allowlist bypass via crafted inputs like `attacker@example.com@evil.test`,
+    // where a naive `split('@')[1]` would extract `example.com` and let the
+    // address through even though its actual mailbox lives at `evil.test`.
+    const parts = lower.split('@');
+    if (parts.length !== 2 || parts[0]!.length === 0 || parts[1]!.length === 0 || /\s/.test(lower)) {
+      // Bootstrap admin check still runs against the raw value (env list lookups
+      // are exact-match, so they're safe). But for both D1 and domain checks
+      // below, we need a structurally valid email — bail.
+      if (isBootstrapAdmin(lower, this.env.ADMIN_EMAILS)) {
+        return { allowed: true, role: 'admin' };
+      }
+      return { allowed: false };
+    }
+
     // 1. Bootstrap admin always wins.
     if (isBootstrapAdmin(lower, this.env.ADMIN_EMAILS)) {
       return { allowed: true, role: 'admin' };
@@ -59,9 +75,10 @@ export class DomainAllowlistPolicy implements AccessPolicy {
       };
     }
 
-    // 3. Domain match.
-    const domain = lower.split('@')[1];
-    if (domain && this.domains.includes(domain)) {
+    // 3. Domain match. Safe to read parts[1] because validation above
+    // confirmed parts.length === 2 and parts[1].length > 0.
+    const domain = parts[1]!;
+    if (this.domains.includes(domain)) {
       const decision: AccessDecision = { allowed: true };
       if (this.derive) decision.orgId = domain.split('.')[0];
       return decision;
