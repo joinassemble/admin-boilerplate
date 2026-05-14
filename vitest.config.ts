@@ -24,6 +24,7 @@ export default defineWorkersConfig(async () => {
               TEST_MIGRATIONS: migrations,
               ADMIN_EMAILS: 'dev@localhost',
               PUBLIC_URL: '',
+              SECRETS_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
             },
           },
         },
