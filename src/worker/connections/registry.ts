@@ -1,23 +1,21 @@
+import { connections } from '../../connections';
 import type { Connection } from './types';
 
-// Eager glob — all matching files are imported at build time.
-// The user-defined area is `src/connections/*.ts` (sibling of `src/worker/`).
-// This file lives at `src/worker/connections/registry.ts`, so:
-//   `..`    → src/worker/
-//   `../..` → src/
-// → `../../connections/*.ts` resolves to `src/connections/*.ts` ✓
-const modules = import.meta.glob<{ default: Connection }>('../../connections/*.ts', {
-  eager: true,
-});
-
+/**
+ * Build the id→Connection map from the explicit list at `src/connections/index.ts`.
+ *
+ * We use an explicit list (not `import.meta.glob`) because the Worker is bundled
+ * by esbuild in `wrangler dev` / `wrangler deploy`, and esbuild doesn't resolve
+ * Vite's glob magic — the call falls through to runtime and `import.meta.glob` is
+ * undefined, crashing the Worker on first request.
+ */
 const byId = new Map<string, Connection>();
-for (const [path, mod] of Object.entries(modules)) {
-  const c = mod.default;
+for (const c of connections) {
   if (!c?.id) {
-    throw new Error(`Connection module ${path} is missing a default export with an .id`);
+    throw new Error('Connection in src/connections/index.ts is missing an .id');
   }
   if (byId.has(c.id)) {
-    throw new Error(`Duplicate connection id "${c.id}" (from ${path})`);
+    throw new Error(`Duplicate connection id "${c.id}" in src/connections/index.ts`);
   }
   byId.set(c.id, c);
 }

@@ -1,23 +1,21 @@
+import { resources } from '../../resources';
 import type { Resource } from './types';
 
-// Eager glob — all matching files are imported at build time.
-// The user-defined area is `src/resources/*.ts` (sibling of `src/worker/`).
-// This file lives at `src/worker/resources/registry.ts`, so:
-//   `..`    → src/worker/
-//   `../..` → src/
-// → `../../resources/*.ts` resolves to `src/resources/*.ts` ✓
-const modules = import.meta.glob<{ default: Resource }>('../../resources/*.ts', {
-  eager: true,
-});
-
+/**
+ * Build the id→Resource map from the explicit list at `src/resources/index.ts`.
+ *
+ * We use an explicit list (not `import.meta.glob`) because the Worker is bundled
+ * by esbuild in `wrangler dev` / `wrangler deploy`, and esbuild doesn't resolve
+ * Vite's glob magic — the call falls through to runtime and `import.meta.glob` is
+ * undefined, crashing the Worker on first request.
+ */
 const byId = new Map<string, Resource>();
-for (const [path, mod] of Object.entries(modules)) {
-  const r = mod.default;
+for (const r of resources) {
   if (!r?.id) {
-    throw new Error(`Resource module ${path} is missing a default export with an .id`);
+    throw new Error('Resource in src/resources/index.ts is missing an .id');
   }
   if (byId.has(r.id)) {
-    throw new Error(`Duplicate resource id "${r.id}" (from ${path})`);
+    throw new Error(`Duplicate resource id "${r.id}" in src/resources/index.ts`);
   }
   byId.set(r.id, r);
 }
