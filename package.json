@@ -19,7 +19,8 @@
     "migrate:remote": "wrangler d1 migrations apply admin-boilerplate --remote"
   },
   "dependencies": {
-    "hono": "^4.6.0"
+    "hono": "^4.6.0",
+    "svelte-spa-router": "^5.1.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.0",
