@@ -4,7 +4,7 @@
     "module": "es2022",
     "moduleResolution": "bundler",
     "lib": ["es2023"],
-    "types": ["@cloudflare/workers-types/2023-07-01", "vitest/globals", "@cloudflare/vitest-pool-workers"],
+    "types": ["@cloudflare/workers-types/2023-07-01", "vitest/globals", "@cloudflare/vitest-pool-workers", "vite/client"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
