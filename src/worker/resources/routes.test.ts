@@ -38,3 +38,32 @@ describe('GET /api/resources/:id/list', () => {
 });
 
 // Happy-path proxy tests with the example resource added in Task 14.
+
+describe('GET /api/resources/:id/list (live proxy through to JSONPlaceholder)', () => {
+  it('lists posts from JSONPlaceholder via the proxy', async () => {
+    // jsonplaceholder is auth.type=none — but the proxy still requires
+    // `isConfigured`, so we set the empty payload first.
+    const adminCookieStr = await cookieFor('admin@example.com', 'admin');
+    await SELF.fetch('http://localhost/api/connections/jsonplaceholder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: adminCookieStr },
+      body: JSON.stringify({ type: 'none' }),
+    });
+
+    // Stub the outbound call with fetchMock.
+    const { fetchMock } = await import('cloudflare:test');
+    fetchMock.activate();
+    fetchMock.disableNetConnect();
+    fetchMock.get('https://jsonplaceholder.typicode.com').intercept({ path: '/posts' })
+      .reply(200, [{ id: 1, userId: 1, title: 't', body: 'b' }]);
+
+    const res = await SELF.fetch('http://localhost/api/resources/jsonplaceholder-posts/list', {
+      headers: { Cookie: adminCookieStr },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as unknown[];
+    expect(body).toHaveLength(1);
+
+    fetchMock.assertNoPendingInterceptors();
+  });
+});

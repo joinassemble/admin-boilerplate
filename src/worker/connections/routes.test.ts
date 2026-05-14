@@ -59,3 +59,27 @@ describe('PUT /api/connections/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('PUT /api/connections/:id (happy path with example connection)', () => {
+  it('sets a secret for jsonplaceholder (auth.type=none accepts {type:none})', async () => {
+    const res = await SELF.fetch('http://localhost/api/connections/jsonplaceholder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: await adminCookie() },
+      body: JSON.stringify({ type: 'none' }),
+    });
+    expect(res.status).toBe(200);
+
+    // isConfigured flips to true.
+    const listRes = await SELF.fetch('http://localhost/api/connections', {
+      headers: { Cookie: await adminCookie() },
+    });
+    const list = (await listRes.json()) as Array<{ id: string; isConfigured: boolean }>;
+    const jp = list.find((c) => c.id === 'jsonplaceholder');
+    expect(jp?.isConfigured).toBe(true);
+
+    // Audit log.
+    const audit = await env.DB.prepare(`SELECT action FROM audit_log WHERE connection_id = ?`)
+      .bind('jsonplaceholder').first<{ action: string }>();
+    expect(audit?.action).toBe('connection.secret_set');
+  });
+});
