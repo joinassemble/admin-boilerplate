@@ -21,4 +21,9 @@ describe('static asset catch-all', () => {
     const res = await SELF.fetch('http://localhost/api/does-not-exist');
     expect(res.status).toBe(404);
   });
+
+  it('returns 404 for the bare /api root, not the SPA', async () => {
+    const res = await SELF.fetch('http://localhost/api');
+    expect(res.status).toBe(404);
+  });
 });
