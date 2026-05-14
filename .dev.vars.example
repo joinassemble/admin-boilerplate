@@ -1,0 +1,17 @@
+ADMIN_EMAILS="you@example.com"
+ACCESS_POLICY="allowlist"
+EMAIL_PROVIDER="console"
+PUBLIC_URL="http://localhost:5173"
+SECRETS_KEY="generate-with-openssl-rand-base64-32"
+
+# Required if ACCESS_POLICY=domain
+# ALLOWED_DOMAINS="example.com"
+# DERIVE_ORG_FROM_DOMAIN="true"
+
+# Optional, for ACCESS_POLICY=open
+# CAPTCHA_PROVIDER="turnstile"
+# CAPTCHA_SECRET=""
+# EMAIL_BLOCKLIST=""
+
+# Required if EMAIL_PROVIDER=resend
+# RESEND_API_KEY=""
