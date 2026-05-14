@@ -148,4 +148,39 @@ describe('proxyResourceOp', () => {
     });
     expect(res.status).toBe(405);
   });
+
+  it('returns 405 for a mutation op that omits enabled:true (Codex regression)', async () => {
+    // Per spec §7, mutations are opt-in. A resource that declares
+    // `create: { method:'POST', path:'/...' }` WITHOUT `enabled: true`
+    // must NOT be callable — only with `enabled === true` is the route live.
+    await setConnectionSecret(env.DB, 'stripe', { type: 'bearer', token: 'sk_test_xyz' }, ROOT_KEY, 'admin@example.com');
+
+    const halfDeclaredResource: Resource = {
+      ...customersResource,
+      // Author declared the shape but didn't flip enabled. Should remain inert.
+      create: { method: 'POST', path: '/v1/customers' },
+      update: { method: 'PATCH', path: '/v1/customers/:id' },
+      delete: { method: 'DELETE', path: '/v1/customers/:id' },
+    };
+
+    const createRes = await proxyResourceOp({
+      db: env.DB, rootKey: ROOT_KEY, connection: stripeConnection,
+      resource: halfDeclaredResource, op: 'create', session, query: {}, params: {},
+      body: { email: 'new@example.com' },
+    });
+    expect(createRes.status).toBe(405);
+
+    const updateRes = await proxyResourceOp({
+      db: env.DB, rootKey: ROOT_KEY, connection: stripeConnection,
+      resource: halfDeclaredResource, op: 'update', session, query: {}, params: { id: 'cus_1' },
+      body: { email: 'updated@example.com' },
+    });
+    expect(updateRes.status).toBe(405);
+
+    const deleteRes = await proxyResourceOp({
+      db: env.DB, rootKey: ROOT_KEY, connection: stripeConnection,
+      resource: halfDeclaredResource, op: 'delete', session, query: {}, params: { id: 'cus_1' },
+    });
+    expect(deleteRes.status).toBe(405);
+  });
 });

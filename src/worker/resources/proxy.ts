@@ -102,16 +102,22 @@ export async function proxyResourceOp(args: ProxyArgs): Promise<Response> {
 
 function pickOp(resource: Resource, op: OpName): ResourceOp | undefined {
   switch (op) {
+    // Read ops are required on every resource (the types enforce presence)
+    // and enabled by default. Setting `enabled: false` explicitly disables them.
     case 'list':
-      return resource.list;
+      return resource.list.enabled === false ? undefined : resource.list;
     case 'detail':
-      return resource.detail;
+      return resource.detail.enabled === false ? undefined : resource.detail;
+    // Mutation ops are opt-in: the spec says they default to false, so we
+    // require an explicit `enabled: true`. This prevents accidentally exposing
+    // a write path when a resource author declares the route shape but isn't
+    // ready to expose it yet (e.g. "I'll add validation later").
     case 'create':
-      return resource.create?.enabled === false ? undefined : resource.create;
+      return resource.create?.enabled === true ? resource.create : undefined;
     case 'update':
-      return resource.update?.enabled === false ? undefined : resource.update;
+      return resource.update?.enabled === true ? resource.update : undefined;
     case 'delete':
-      return resource.delete?.enabled === false ? undefined : resource.delete;
+      return resource.delete?.enabled === true ? resource.delete : undefined;
   }
 }
 

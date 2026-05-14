@@ -83,3 +83,38 @@ describe('PUT /api/connections/:id (happy path with example connection)', () => 
     expect(audit?.action).toBe('connection.secret_set');
   });
 });
+
+describe('PUT /api/connections/:id (secret-shape validation)', () => {
+  it('rejects a mismatched secret type for the connection (Codex regression)', async () => {
+    // jsonplaceholder has auth.type=none. Trying to store a bearer secret
+    // would later throw inside buildAuthHeaders at proxy time, surfacing
+    // as a 500. Validate at the API boundary instead.
+    const res = await SELF.fetch('http://localhost/api/connections/jsonplaceholder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: await adminCookie() },
+      body: JSON.stringify({ type: 'bearer', token: 'sk_test_anything' }),
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { ok: boolean; error: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toContain('secret_type_mismatch');
+  });
+
+  it('rejects an unknown secret type entirely', async () => {
+    const res = await SELF.fetch('http://localhost/api/connections/jsonplaceholder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: await adminCookie() },
+      body: JSON.stringify({ type: 'something-made-up' }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a missing type field', async () => {
+    const res = await SELF.fetch('http://localhost/api/connections/jsonplaceholder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: await adminCookie() },
+      body: JSON.stringify({ token: 'no-type-given' }),
+    });
+    expect(res.status).toBe(400);
+  });
+});
