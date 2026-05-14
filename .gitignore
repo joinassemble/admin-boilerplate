@@ -12,6 +12,7 @@ dist
 .wrangler
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 
 # tauri (later plan)
 target
