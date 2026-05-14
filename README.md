@@ -62,12 +62,6 @@ pnpm typecheck    # tsc project-references build
 pnpm deploy
 ```
 
-## Design
-
-Full design spec: [`docs/superpowers/specs/2026-05-13-admin-boilerplate-design.md`](docs/superpowers/specs/2026-05-13-admin-boilerplate-design.md)
-
-Implementation plans: [`docs/superpowers/plans/`](docs/superpowers/plans/)
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
