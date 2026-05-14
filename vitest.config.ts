@@ -12,7 +12,19 @@ export default defineWorkersConfig(async () => {
           miniflare: {
             d1Databases: ['DB'],
             kvNamespaces: ['RATE_LIMIT', 'MAGIC_TOKENS'],
-            bindings: { TEST_MIGRATIONS: migrations },
+            // TEST_MIGRATIONS is consumed by ./test/apply-migrations.ts.
+            // ADMIN_EMAILS is set explicitly here so test outcomes don't
+            // depend on whether .dev.vars happens to be loaded — the
+            // magic-link callback test fakes a token for `dev@localhost`
+            // and needs the policy to recognise it as a bootstrap admin.
+            // PUBLIC_URL is intentionally empty so the magic-link tests
+            // exercise the request-origin fallback path. `.dev.vars`'s
+            // value (used by `pnpm dev:all`) does not apply in test mode.
+            bindings: {
+              TEST_MIGRATIONS: migrations,
+              ADMIN_EMAILS: 'dev@localhost',
+              PUBLIC_URL: '',
+            },
           },
         },
       },
