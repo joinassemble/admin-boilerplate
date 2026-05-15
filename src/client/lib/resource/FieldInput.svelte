@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import Input from '$client/lib/ui/Input.svelte';
   import Textarea from '$client/lib/ui/Textarea.svelte';
   import Select from '$client/lib/ui/Select.svelte';
@@ -14,28 +15,49 @@
 
   let { field, value, onchange, disabled = false }: Props = $props();
 
-  // Coerce to a string for text-based inputs; the parent's onchange callback
-  // gets the raw value back through bindable bridges.
+  // Local edit state for text-based inputs.
   let stringValue = $state<string>(value == null ? '' : String(value));
   let boolValue = $state<boolean>(Boolean(value));
 
+  // Push local edits back to the parent.
+  //
+  // Why `untrack` around the `onchange(...)` call: in Svelte 5, props read
+  // inside an `$effect` are tracked dependencies. The parent's onchange is
+  // an arrow function created fresh on every render, so its identity changes
+  // every time the parent re-renders (e.g. when WE call onchange and the
+  // parent updates `values`). Without untrack, that creates a loop:
+  //   onchange → parent update → new arrow → effect re-runs → onchange → ...
+  // → `effect_update_depth_exceeded`.
+  // We only want this effect to re-fire on local state changes
+  // (stringValue / boolValue), not on parent-identity churn.
   $effect(() => {
-    // Push back to the parent in the type-appropriate shape.
+    // Tracked reads — these decide when the effect re-runs.
+    const bv = boolValue;
+    const sv = stringValue;
+
+    // Compute the value to push, then call onchange in an untracked block.
+    let next: unknown;
     if (field.type === 'boolean') {
-      onchange(boolValue);
-    } else if (field.type === 'number' || field.type === 'integer' || field.type === 'currency' || field.type === 'unix-ts') {
-      const n = Number(stringValue);
-      onchange(Number.isFinite(n) ? n : null);
+      next = bv;
+    } else if (
+      field.type === 'number' ||
+      field.type === 'integer' ||
+      field.type === 'currency' ||
+      field.type === 'unix-ts'
+    ) {
+      const n = Number(sv);
+      next = Number.isFinite(n) ? n : null;
     } else if (field.type === 'json') {
       try {
-        onchange(JSON.parse(stringValue));
+        next = JSON.parse(sv);
       } catch {
-        // Leave as the raw string; the server will reject if invalid.
-        onchange(stringValue);
+        next = sv;
       }
     } else {
-      onchange(stringValue);
+      next = sv;
     }
+
+    untrack(() => onchange(next));
   });
 </script>
 
