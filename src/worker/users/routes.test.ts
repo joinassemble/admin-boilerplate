@@ -77,6 +77,40 @@ describe('PATCH /api/users/:email', () => {
     expect(u?.role).toBe('admin');
   });
 
+  it('propagates role/orgId changes into existing sessions (Codex regression)', async () => {
+    // Codex caught: PATCH only updated users; existing sessions kept the
+    // stale snapshotted role/orgId, so a demoted admin remained admin for
+    // up to 30 days. Sessions for the patched user must be updated too.
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB.prepare('INSERT INTO users (email, first_seen_at, last_seen_at, role, org_id) VALUES (?, ?, ?, ?, ?)')
+      .bind('demote@x.io', now, now, 'admin', 'old-org').run();
+    const s1 = await createSession(env.DB, { email: 'demote@x.io', role: 'admin', orgId: 'old-org' });
+    const s2 = await createSession(env.DB, { email: 'demote@x.io', role: 'admin', orgId: 'old-org' });
+
+    const res = await SELF.fetch('http://localhost/api/users/demote%40x.io', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Cookie: await adminCookie() },
+      body: JSON.stringify({ role: null, orgId: 'new-org' }),
+    });
+    expect(res.status).toBe(200);
+
+    // Both sessions for this user reflect the new values on next request.
+    for (const token of [s1.token, s2.token]) {
+      const row = await env.DB.prepare('SELECT role, org_id FROM sessions WHERE token = ?')
+        .bind(token).first<{ role: string | null; org_id: string | null }>();
+      expect(row?.role).toBeNull();
+      expect(row?.org_id).toBe('new-org');
+    }
+
+    // Sanity: a different user's session is untouched.
+    await env.DB.prepare('INSERT INTO users (email, first_seen_at, last_seen_at, role) VALUES (?, ?, ?, ?)')
+      .bind('other@x.io', now, now, 'admin').run();
+    const other = await createSession(env.DB, { email: 'other@x.io', role: 'admin' });
+    const otherRow = await env.DB.prepare('SELECT role FROM sessions WHERE token = ?')
+      .bind(other.token).first<{ role: string }>();
+    expect(otherRow?.role).toBe('admin');
+  });
+
   it('404 if user does not exist', async () => {
     const res = await SELF.fetch('http://localhost/api/users/absent%40x.io', {
       method: 'PATCH',

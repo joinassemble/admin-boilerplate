@@ -183,4 +183,68 @@ describe('proxyResourceOp', () => {
     });
     expect(deleteRes.status).toBe(405);
   });
+
+  it('forwards cursorParam to the upstream URL for list ops (Codex regression)', async () => {
+    // Codex caught: the SPA appends ?starting_after=X to the proxy URL, but
+    // the proxy only used :query.<key> placeholders in the resource path.
+    // Resources with bare paths like /v1/customers never got the cursor
+    // forwarded — Next would silently refetch page 1. Fix: if a list op
+    // declares cursorParam and the query has a value for it, append it
+    // to the upstream URL automatically.
+    await setConnectionSecret(env.DB, 'stripe', { type: 'bearer', token: 'sk_test_xyz' }, ROOT_KEY, 'admin@example.com');
+
+    fetchMock.get('https://api.stripe.com')
+      .intercept({ path: '/v1/customers?starting_after=cus_42' })
+      .reply(200, { data: [{ id: 'cus_43', email: 'b@b.com' }] });
+
+    const cursorResource: Resource = {
+      ...customersResource,
+      list: { method: 'GET', path: '/v1/customers', dataPath: 'data', cursorParam: 'starting_after' },
+    };
+
+    const res = await proxyResourceOp({
+      db: env.DB,
+      rootKey: ROOT_KEY,
+      connection: stripeConnection,
+      resource: cursorResource,
+      op: 'list',
+      session,
+      query: { starting_after: 'cus_42' },
+      params: {},
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([{ id: 'cus_43', email: 'b@b.com' }]);
+  });
+
+  it('does not append cursor when not provided or when cursorParam is undeclared', async () => {
+    // Two sub-assertions in one test:
+    //   (a) cursorParam declared but no query value → no ?param=... appended
+    //   (b) no cursorParam declared → cursor query value is ignored entirely
+    await setConnectionSecret(env.DB, 'stripe', { type: 'bearer', token: 'sk_test_xyz' }, ROOT_KEY, 'admin@example.com');
+
+    // (a) — declared, no query: plain /v1/customers
+    fetchMock.get('https://api.stripe.com').intercept({ path: '/v1/customers' })
+      .reply(200, { data: [] });
+
+    const declared: Resource = {
+      ...customersResource,
+      list: { method: 'GET', path: '/v1/customers', dataPath: 'data', cursorParam: 'starting_after' },
+    };
+    let res = await proxyResourceOp({
+      db: env.DB, rootKey: ROOT_KEY, connection: stripeConnection,
+      resource: declared, op: 'list', session, query: {}, params: {},
+    });
+    expect(res.status).toBe(200);
+
+    // (b) — no cursorParam declared, query has starting_after: still /v1/customers
+    fetchMock.get('https://api.stripe.com').intercept({ path: '/v1/customers' })
+      .reply(200, { data: [] });
+
+    res = await proxyResourceOp({
+      db: env.DB, rootKey: ROOT_KEY, connection: stripeConnection,
+      resource: customersResource, // no cursorParam
+      op: 'list', session, query: { starting_after: 'cus_x' }, params: {},
+    });
+    expect(res.status).toBe(200);
+  });
 });

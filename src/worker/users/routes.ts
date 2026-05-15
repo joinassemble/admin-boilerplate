@@ -74,6 +74,29 @@ export function registerUserRoutes(app: Hono<{ Bindings: Env }>): void {
     // Banning revokes all sessions so the user is signed out everywhere immediately.
     if (action === 'user.ban') {
       await revokeAllForEmail(c.env.DB, email);
+    } else {
+      // For role/orgId changes, also push the new values into the user's
+      // existing sessions so permission changes take effect on the very next
+      // request — without this, the sessions table's snapshotted role/orgId
+      // would stay stale for up to the sliding-expiry window (30 days).
+      // Banned users have no sessions left (we just revoked above), so this
+      // only matters on the non-ban path.
+      const sessionUpdates: string[] = [];
+      const sessionBinds: unknown[] = [];
+      if (typeof body.orgId === 'string' || body.orgId === null) {
+        sessionUpdates.push('org_id = ?');
+        sessionBinds.push(body.orgId ?? null);
+      }
+      if (typeof body.role === 'string' || body.role === null) {
+        sessionUpdates.push('role = ?');
+        sessionBinds.push(body.role ?? null);
+      }
+      if (sessionUpdates.length > 0) {
+        sessionBinds.push(email);
+        await c.env.DB.prepare(
+          `UPDATE sessions SET ${sessionUpdates.join(', ')} WHERE email = ?`,
+        ).bind(...sessionBinds).run();
+      }
     }
 
     await recordAuditEvent(c.env.DB, {
