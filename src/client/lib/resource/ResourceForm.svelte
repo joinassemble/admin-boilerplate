@@ -55,15 +55,17 @@
         toast.success('Saved');
         push(`/r/${resource.id}/${recordId}`);
       } else {
-        const created = await api<Record<string, unknown>>(`/api/resources/${resource.id}`, {
+        await api<Record<string, unknown>>(`/api/resources/${resource.id}`, {
           method: 'POST',
           body: JSON.stringify(values),
         });
         toast.success('Created');
-        const primary = resource.fields.find((f) => f.primary);
-        const newId = primary ? created[primary.key] : undefined;
-        if (newId !== undefined) push(`/r/${resource.id}/${newId}`);
-        else push(`/r/${resource.id}`);
+        // After create, redirect to the LIST rather than the new detail page.
+        // Reasoning: a freshly-issued id from the upstream may not be loadable
+        // yet (e.g. JSONPlaceholder fakes the POST → returns id 101 → real GET
+        // for /posts/101 then 404s). The list view is always loadable, and
+        // for real backends the new row will typically appear at the top.
+        push(`/r/${resource.id}`);
       }
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
