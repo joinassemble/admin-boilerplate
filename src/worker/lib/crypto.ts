@@ -16,7 +16,19 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 async function rootKey(rootKeyB64: string): Promise<CryptoKey> {
-  const raw = base64ToBytes(rootKeyB64);
+  let raw: Uint8Array;
+  try {
+    raw = base64ToBytes(rootKeyB64);
+  } catch {
+    throw new Error(
+      'SECRETS_KEY is not valid base64. Generate one with: openssl rand -base64 32',
+    );
+  }
+  if (raw.byteLength < 16) {
+    throw new Error(
+      `SECRETS_KEY must decode to at least 16 bytes (got ${raw.byteLength}). Generate one with: openssl rand -base64 32`,
+    );
+  }
   return crypto.subtle.importKey('raw', raw, 'HKDF', false, ['deriveKey']);
 }
 

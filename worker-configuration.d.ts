@@ -9,6 +9,11 @@ interface Env {
   // Static assets binding (Workers Assets)
   ASSETS: Fetcher;
 
+  // Email Workers binding (send_email) — declared only when EMAIL_PROVIDER=cloudflare.
+  // Uses a structural type because the official SendEmail type's send() overload for
+  // raw RFC822 delivery does not match @cloudflare/workers-types at the time of writing.
+  SEND_EMAIL?: { send(message: { from: string; to: string; raw: string }): Promise<unknown> };
+
   // Secrets (set via `wrangler secret put`) — declared here for type safety;
   // not yet populated in Plan 1 but listed so the type stays stable.
   SECRETS_KEY?: string;
