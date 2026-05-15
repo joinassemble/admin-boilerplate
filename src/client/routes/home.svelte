@@ -1,18 +1,31 @@
 <script lang="ts">
-  import { session } from '$client/lib/session.svelte';
+  import { onMount } from 'svelte';
+  import { push } from 'svelte-spa-router';
+  import { registry } from '$client/lib/registry.svelte';
+
+  // If there are resources, jump to the first one. Otherwise show a hint.
+  onMount(() => {
+    if (registry.status === 'ready' && registry.items.length > 0) {
+      push(`/r/${registry.items[0].id}`);
+    }
+  });
+
+  $effect(() => {
+    if (registry.status === 'ready' && registry.items.length > 0) {
+      push(`/r/${registry.items[0].id}`);
+    }
+  });
 </script>
 
-<main class="grid min-h-screen place-items-center px-6">
-  <div class="w-full max-w-sm text-center space-y-3">
-    <p class="text-[11px] uppercase tracking-[0.08em] text-[var(--color-muted)] font-medium">admin-boilerplate</p>
-    <h1 class="text-2xl font-semibold tracking-tight">Signed in.</h1>
-    <p class="text-sm text-[var(--color-muted)]">{session.value?.email}</p>
-    <button
-      type="button"
-      onclick={() => session.signOut()}
-      class="text-sm text-[var(--color-muted)] underline-offset-2 hover:underline"
-    >
-      Sign out
-    </button>
-  </div>
-</main>
+<div class="space-y-2">
+  <h1 class="text-xl font-semibold tracking-tight">admin-boilerplate</h1>
+  <p class="text-sm text-[var(--color-muted)]">
+    {#if registry.status === 'loading'}
+      Loading resources…
+    {:else if registry.items.length === 0}
+      No resources registered. Drop a file in <code class="font-mono">src/resources/</code> and add it to <code class="font-mono">src/resources/index.ts</code>.
+    {:else}
+      Pick a resource from the sidebar.
+    {/if}
+  </p>
+</div>
