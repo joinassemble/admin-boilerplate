@@ -1,13 +1,19 @@
 import { Hono } from 'hono';
+import { registerAccessRoutes } from './access/routes';
+import { registerAuditRoutes } from './audit/routes';
 import { registerAuthRoutes } from './auth/routes';
 import { registerConnectionRoutes } from './connections/routes';
 import { registerResourceRoutes } from './resources/routes';
+import { registerUserRoutes } from './users/routes';
 
 const app = new Hono<{ Bindings: Env }>();
 
 registerAuthRoutes(app);
 registerConnectionRoutes(app);
 registerResourceRoutes(app);
+registerAccessRoutes(app);
+registerUserRoutes(app);
+registerAuditRoutes(app);
 
 app.get('/api/health', (c) => c.json({ ok: true }));
 
