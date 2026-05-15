@@ -1,31 +1,64 @@
 @import "tailwindcss";
 
 @theme {
+  /* Surfaces and lines (light) */
   --color-bg: #fafafa;
   --color-surface: #ffffff;
+  --color-surface-2: #f4f4f4;
   --color-border: #e8e8e8;
   --color-border-strong: #d4d4d4;
+
+  /* Text */
   --color-text: #0a0a0a;
+  --color-text-secondary: #404040;
   --color-muted: #737373;
+  --color-disabled: #a3a3a3;
+
+  /* Status */
   --color-success-fg: #047857;
   --color-success-bg: #ecfdf5;
   --color-warning-fg: #92400e;
   --color-warning-bg: #fef3c7;
   --color-error-fg: #991b1b;
   --color-error-bg: #fee2e2;
+  --color-info-fg: #1d4ed8;
+  --color-info-bg: #dbeafe;
 
+  /* Typography */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
                "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 
+  /* Radii */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
 }
 
-:root {
-  color-scheme: light dark;
+/* Dark mode — flips surfaces and inverts the text scale. */
+[data-theme="dark"] {
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-surface-2: #1f1f1f;
+  --color-border: #262626;
+  --color-border-strong: #3a3a3a;
+
+  --color-text: #fafafa;
+  --color-text-secondary: #d4d4d4;
+  --color-muted: #737373;
+  --color-disabled: #525252;
+
+  --color-success-fg: #34d399;
+  --color-success-bg: #064e3b;
+  --color-warning-fg: #fbbf24;
+  --color-warning-bg: #78350f;
+  --color-error-fg: #f87171;
+  --color-error-bg: #7f1d1d;
+  --color-info-fg: #60a5fa;
+  --color-info-bg: #1e3a8a;
 }
+
+:root { color-scheme: light dark; }
 
 html, body {
   margin: 0;
