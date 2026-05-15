@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { link, location } from 'svelte-spa-router';
+  import { link, router } from 'svelte-spa-router';
   import { registry } from '$client/lib/registry.svelte';
 
-  // Active match — svelte-spa-router's $location is the hash without leading '#'.
+  // Active match — svelte-spa-router v5 exposes router.location (no leading '/').
   function isActive(href: string): boolean {
-    return $location === href || $location.startsWith(href + '/');
+    return router.location === href || router.location.startsWith(href + '/');
   }
 </script>
 
