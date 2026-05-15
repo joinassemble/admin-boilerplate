@@ -13,6 +13,10 @@
   import ResourceListPage from './routes/ResourceListPage.svelte';
   import ResourceDetailPage from './routes/ResourceDetailPage.svelte';
   import ResourceFormPage from './routes/ResourceFormPage.svelte';
+  import SettingsConnectionsPage from './routes/SettingsConnectionsPage.svelte';
+  import SettingsAccessPage from './routes/SettingsAccessPage.svelte';
+  import SettingsUsersPage from './routes/SettingsUsersPage.svelte';
+  import SettingsAuditPage from './routes/SettingsAuditPage.svelte';
 
   const authedRoutes = {
     '/': Home,
@@ -20,6 +24,10 @@
     '/r/:id/new': ResourceFormPage,
     '/r/:id/:recordId': ResourceDetailPage,
     '/r/:id/:recordId/edit': ResourceFormPage,
+    '/settings/connections': SettingsConnectionsPage,
+    '/settings/access': SettingsAccessPage,
+    '/settings/users': SettingsUsersPage,
+    '/settings/audit': SettingsAuditPage,
     '*': Home,
   };
 
