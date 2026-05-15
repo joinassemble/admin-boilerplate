@@ -50,6 +50,19 @@ export async function proxyResourceOp(args: ProxyArgs): Promise<Response> {
     throw err;
   }
 
+  // If this is a list op with a declared cursorParam and the SPA passed a
+  // value for it, append it to the upstream URL. Without this, the SPA's
+  // Next button hits /api/resources/.../list?starting_after=X but the
+  // proxy only forwards query values when the resource path explicitly
+  // contains :query.<key> — so pagination would silently no-op.
+  if (args.op === 'list' && opConfig.cursorParam) {
+    const cursorValue = args.query[opConfig.cursorParam];
+    if (cursorValue !== undefined && cursorValue !== '') {
+      const sep = fullPath.includes('?') ? '&' : '?';
+      fullPath = `${fullPath}${sep}${encodeURIComponent(opConfig.cursorParam)}=${encodeURIComponent(cursorValue)}`;
+    }
+  }
+
   const url = args.connection.baseUrl.replace(/\/$/, '') + (fullPath.startsWith('/') ? fullPath : `/${fullPath}`);
 
   // Build the outbound request.

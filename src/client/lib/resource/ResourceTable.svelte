@@ -17,16 +17,24 @@
   let rows = $state<Row[]>([]);
   let loading = $state(true);
   let errorMsg = $state<string | null>(null);
+  let cursor = $state<string | null>(null);
+  let hasMore = $state(false);
 
   const columns = $derived(resource.fields.filter((f) => f.tableColumn));
   const primaryField = $derived(resource.fields.find((f) => f.primary));
 
-  async function load() {
+  async function load(c: string | null = null) {
     loading = true;
     errorMsg = null;
     try {
-      const data = await api<Row[] | Row>(`/api/resources/${resource.id}/list`);
-      rows = Array.isArray(data) ? data : ((data as { data?: Row[] }).data ?? []);
+      const path = c
+        ? `/api/resources/${resource.id}/list?${resource.list.cursorParam ?? 'starting_after'}=${encodeURIComponent(c)}`
+        : `/api/resources/${resource.id}/list`;
+      const data = await api<Row[] | Row>(path);
+      const newRows = Array.isArray(data) ? data : ((data as { data?: Row[] }).data ?? []);
+      rows = newRows;
+      // Heuristic: if we got at least 10 rows and the resource declares a cursorParam, there might be more.
+      hasMore = newRows.length >= 10 && Boolean(resource.list.cursorParam) && Boolean(primaryField);
     } catch (err) {
       if (err instanceof ApiError) {
         errorMsg = `Failed to load (${err.status})`;
@@ -34,6 +42,7 @@
         errorMsg = 'Failed to load';
       }
       rows = [];
+      hasMore = false;
     } finally {
       loading = false;
     }
@@ -49,6 +58,17 @@
   function openRow(row: Row): void {
     const id = primaryField ? row[primaryField.key] : undefined;
     if (id !== undefined) push(`/r/${resource.id}/${id}`);
+  }
+
+  function next(): void {
+    if (!hasMore || !primaryField) return;
+    const last = rows[rows.length - 1];
+    if (!last) return;
+    const lastId = last[primaryField.key];
+    if (lastId !== undefined) {
+      cursor = String(lastId);
+      void load(cursor);
+    }
   }
 </script>
 
@@ -95,5 +115,11 @@
         {/each}
       </tbody>
     </Table>
+  {/if}
+
+  {#if hasMore && !loading}
+    <div class="flex justify-end pt-2">
+      <Button variant="secondary" onclick={next}>Next →</Button>
+    </div>
   {/if}
 </div>
