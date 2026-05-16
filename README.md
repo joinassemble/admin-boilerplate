@@ -75,6 +75,16 @@ pnpm deploy
 
 Plus configure an email provider in production — `EMAIL_PROVIDER=cloudflare` (via Cloudflare Email Routing) or `EMAIL_PROVIDER=resend` (with `RESEND_API_KEY` set). See deploy docs.
 
+## Desktop app
+
+The boilerplate ships a Tauri 2 wrapper that bundles the SPA as a native binary for macOS / Windows / Linux. Same SPA, same Worker — the desktop is a thin distribution channel.
+
+```bash
+pnpm desktop:build
+```
+
+Requires the Rust toolchain. Full setup, distribution notes, and the magic-link-in-browser limitation + fix paths: [docs/desktop.md](docs/desktop.md).
+
 ## Concepts
 
 - **Connections** declare API services your admin proxies (Stripe, GitHub, your own backend, etc.). Defined in `src/connections/<id>.ts`. Secrets stored encrypted in D1, set via Settings → Connections.
