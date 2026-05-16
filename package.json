@@ -16,7 +16,10 @@
     "test:watch": "vitest",
     "typecheck": "tsc --build",
     "migrate:local": "wrangler d1 migrations apply admin-boilerplate --local",
-    "migrate:remote": "wrangler d1 migrations apply admin-boilerplate --remote"
+    "migrate:remote": "wrangler d1 migrations apply admin-boilerplate --remote",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build"
   },
   "dependencies": {
     "hono": "^4.6.0",
