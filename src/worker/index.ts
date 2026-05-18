@@ -3,6 +3,7 @@ import { registerAccessRoutes } from './access/routes';
 import { registerAuditRoutes } from './audit/routes';
 import { registerAuthRoutes } from './auth/routes';
 import { registerConnectionRoutes } from './connections/routes';
+import { registerMockRoutes } from './_mock/routes';
 import { registerResourceRoutes } from './resources/routes';
 import { registerUserRoutes } from './users/routes';
 
@@ -10,6 +11,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 registerAuthRoutes(app);
 registerConnectionRoutes(app);
+registerMockRoutes(app);
 registerResourceRoutes(app);
 registerAccessRoutes(app);
 registerUserRoutes(app);
