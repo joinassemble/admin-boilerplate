@@ -2,14 +2,15 @@
   import type { Snippet } from 'svelte';
 
   interface Props {
+    density?: 'comfortable' | 'compact';
     children: Snippet;
   }
 
-  let { children }: Props = $props();
+  let { density = 'comfortable', children }: Props = $props();
 </script>
 
 <div class="overflow-x-auto rounded-md border border-[var(--color-border)] bg-[var(--color-surface)]">
-  <table class="w-full text-sm">
+  <table class="w-full text-sm" class:compact={density === 'compact'}>
     {@render children()}
   </table>
 </div>
@@ -31,11 +32,17 @@
     border-bottom: 1px solid var(--color-border);
     vertical-align: top;
   }
+  :global(table.compact th) {
+    padding: 6px 10px;
+  }
+  :global(table.compact td) {
+    padding: 6px 10px;
+  }
   :global(table tbody tr:last-child td) {
     border-bottom: none;
   }
   :global(table tbody tr) {
-    transition: background 80ms ease;
+    transition: background var(--motion-fast) var(--motion-easing);
   }
   :global(table tbody tr:hover) {
     background: var(--color-surface-2);

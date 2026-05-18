@@ -3,10 +3,11 @@
 
   interface Props {
     tone?: 'neutral' | 'success' | 'warning' | 'error' | 'info';
+    border?: boolean;
     children: Snippet;
   }
 
-  let { tone = 'neutral', children }: Props = $props();
+  let { tone = 'neutral', border = false, children }: Props = $props();
 
   const tones = {
     neutral: 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]',
@@ -17,6 +18,6 @@
   };
 </script>
 
-<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium {tones[tone]}">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium {tones[tone]} {border ? 'border border-[var(--color-border)]' : ''}">
   {@render children()}
 </span>
