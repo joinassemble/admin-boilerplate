@@ -4,6 +4,9 @@
   import { api, ApiError } from '$client/lib/api';
   import Button from '$client/lib/ui/Button.svelte';
   import Table from '$client/lib/ui/Table.svelte';
+  import EmptyState from '$client/lib/ui/EmptyState.svelte';
+  import Skeleton from '$client/lib/ui/Skeleton.svelte';
+  import Toolbar from '$client/lib/ui/Toolbar.svelte';
   import FieldDisplay from './FieldDisplay.svelte';
   import type { Resource } from '$shared/resource-schema';
 
@@ -17,15 +20,46 @@
   let rows = $state<Row[]>([]);
   let loading = $state(true);
   let errorMsg = $state<string | null>(null);
+  let errorStatus = $state<number | null>(null);
   let cursor = $state<string | null>(null);
   let hasMore = $state(false);
+
+  // Sorting state (client-side, current page only).
+  let sortKey = $state<string | null>(null);
+  let sortDir = $state<'asc' | 'desc'>('asc');
 
   const columns = $derived(resource.fields.filter((f) => f.tableColumn));
   const primaryField = $derived(resource.fields.find((f) => f.primary));
 
+  function toggleSort(key: string): void {
+    if (sortKey === key) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortKey = key;
+      sortDir = 'asc';
+    }
+  }
+
+  const sortedRows = $derived.by(() => {
+    if (!sortKey) return rows;
+    const key = sortKey;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = a[key];
+      const bv = b[key];
+      if (av == null && bv == null) return 0;
+      if (av == null) return -dir;
+      if (bv == null) return dir;
+      if (av < bv) return -dir;
+      if (av > bv) return dir;
+      return 0;
+    });
+  });
+
   async function load(c: string | null = null) {
     loading = true;
     errorMsg = null;
+    errorStatus = null;
     try {
       const path = c
         ? `/api/resources/${resource.id}/list?${resource.list.cursorParam ?? 'starting_after'}=${encodeURIComponent(c)}`
@@ -37,6 +71,7 @@
       hasMore = newRows.length >= 10 && Boolean(resource.list.cursorParam) && Boolean(primaryField);
     } catch (err) {
       if (err instanceof ApiError) {
+        errorStatus = err.status;
         errorMsg = `Failed to load (${err.status})`;
       } else {
         errorMsg = 'Failed to load';
@@ -73,30 +108,23 @@
 </script>
 
 <div class="space-y-4">
-  <header class="flex items-baseline justify-between">
-    <div>
-      <h1 class="text-xl font-semibold tracking-tight">{resource.name}</h1>
-      {#if resource.group}
-        <p class="text-xs text-[var(--color-muted)]">{resource.group}</p>
+  <Toolbar>
+    {#snippet left()}
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight">{resource.name}</h1>
+        {#if resource.group}
+          <p class="text-xs text-[var(--color-muted)]">{resource.group}</p>
+        {/if}
+      </div>
+    {/snippet}
+    {#snippet right()}
+      {#if resource.create?.enabled}
+        <Button onclick={() => push(`/r/${resource.id}/new`)}>New</Button>
       {/if}
-    </div>
-    {#if resource.create?.enabled}
-      <Button onclick={() => push(`/r/${resource.id}/new`)}>New</Button>
-    {/if}
-  </header>
+    {/snippet}
+  </Toolbar>
 
   {#if loading}
-    <p class="text-sm text-[var(--color-muted)]">Loading…</p>
-  {:else if errorMsg}
-    <p class="text-sm text-[var(--color-error-fg)]">{errorMsg}</p>
-    {#if errorMsg.includes('412')}
-      <p class="text-sm text-[var(--color-muted)]">
-        The <code class="font-mono">{resource.connection}</code> connection isn't configured yet.
-      </p>
-    {/if}
-  {:else if rows.length === 0}
-    <p class="text-sm text-[var(--color-muted)]">No records.</p>
-  {:else}
     <Table>
       <thead>
         <tr>
@@ -106,7 +134,50 @@
         </tr>
       </thead>
       <tbody>
-        {#each rows as row}
+        {#each Array(5) as _, i (i)}
+          <tr>
+            {#each columns as _col, j (j)}
+              <td><Skeleton width="60%" /></td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </Table>
+  {:else if errorMsg}
+    <EmptyState
+      title="Couldn't load records"
+      description={errorStatus === 412
+        ? `The "${resource.connection}" connection isn't configured yet.`
+        : errorMsg}
+    />
+  {:else if sortedRows.length === 0}
+    <EmptyState
+      title="No records"
+      description={resource.create?.enabled ? 'Click New to add the first one.' : 'Nothing to show yet.'}
+    />
+  {:else}
+    <Table>
+      <thead>
+        <tr>
+          {#each columns as col}
+            <th>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 hover:text-[var(--color-text)] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                style:outline-color="var(--focus-ring-color)"
+                onclick={() => toggleSort(col.key)}
+              >
+                {col.label}
+                {#if sortKey === col.key}
+                  <span class="text-[10px]" aria-hidden="true">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                {/if}
+              </button>
+            </th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each sortedRows as row}
           <tr class="clickable" onclick={() => openRow(row)}>
             {#each columns as col}
               <td><FieldDisplay field={col} value={row[col.key]} /></td>
@@ -115,11 +186,11 @@
         {/each}
       </tbody>
     </Table>
-  {/if}
 
-  {#if hasMore && !loading}
-    <div class="flex justify-end pt-2">
-      <Button variant="secondary" onclick={next}>Next →</Button>
-    </div>
+    {#if hasMore}
+      <div class="flex justify-end pt-2">
+        <Button variant="secondary" onclick={next}>Next →</Button>
+      </div>
+    {/if}
   {/if}
 </div>

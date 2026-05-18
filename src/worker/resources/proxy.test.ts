@@ -216,6 +216,38 @@ describe('proxyResourceOp', () => {
     expect(await res.json()).toEqual([{ id: 'cus_43', email: 'b@b.com' }]);
   });
 
+  it('returns 503 with dev_connection_in_production for a localhost baseUrl in prod', async () => {
+    // Regression: forks that deploy without deleting src/connections/mock.ts
+    // would otherwise hang / 502 as Cloudflare's edge tries to fetch
+    // http://localhost:8787. The proxy short-circuits with a 503 carrying
+    // a clear actionable error code so operators see the real problem
+    // instead of an opaque upstream failure.
+    const mockConnection = {
+      id: 'mock',
+      name: 'Mock',
+      baseUrl: 'http://localhost:8787',
+      auth: { type: 'none' as const },
+    };
+
+    const res = await proxyResourceOp({
+      db: env.DB,
+      rootKey: ROOT_KEY,
+      connection: mockConnection,
+      resource: customersResource,
+      op: 'list',
+      session,
+      query: {},
+      params: {},
+      env: 'production',
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { ok: boolean; error: string; detail: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('dev_connection_in_production');
+    expect(body.detail).toMatch(/mock/);
+    expect(body.detail).toMatch(/src\/connections\/mock\.ts/);
+  });
+
   it('does not append cursor when not provided or when cursorParam is undeclared', async () => {
     // Two sub-assertions in one test:
     //   (a) cursorParam declared but no query value → no ?param=... appended

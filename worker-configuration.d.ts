@@ -30,6 +30,12 @@ interface Env {
   PUBLIC_URL?: string;
   CAPTCHA_PROVIDER?: string;
   EMAIL_BLOCKLIST?: string;
+  // Deployment env discriminator. Defaults to "development" via wrangler.toml
+  // [vars]; production deploys override with --var ENV:production (or via the
+  // CF dashboard). Used to gate dev-only routes (e.g. /_mock/*) and surface
+  // loud errors when a dev-only connection (e.g. localhost baseUrl) is used
+  // in production.
+  ENV?: string;
 }
 
 declare module 'cloudflare:test' {

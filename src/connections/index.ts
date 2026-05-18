@@ -9,5 +9,6 @@
 
 import type { Connection } from '../worker/connections/types';
 import jsonplaceholder from './jsonplaceholder';
+import mock from './mock';
 
-export const connections: Connection[] = [jsonplaceholder];
+export const connections: Connection[] = [jsonplaceholder, mock];

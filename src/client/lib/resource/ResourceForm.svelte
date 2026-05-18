@@ -5,6 +5,7 @@
   import { toast } from '$client/lib/toast.svelte';
   import Button from '$client/lib/ui/Button.svelte';
   import Field from '$client/lib/ui/Field.svelte';
+  import Skeleton from '$client/lib/ui/Skeleton.svelte';
   import FieldInput from './FieldInput.svelte';
   import type { Resource } from '$shared/resource-schema';
 
@@ -85,7 +86,14 @@
   </header>
 
   {#if loading}
-    <p class="text-sm text-[var(--color-muted)]">Loading…</p>
+    <div class="space-y-4 max-w-xl">
+      {#each Array(4) as _, i (i)}
+        <div class="space-y-1">
+          <Skeleton width="20%" height="12px" />
+          <Skeleton width="100%" height="36px" rounded="md" />
+        </div>
+      {/each}
+    </div>
   {:else}
     <form onsubmit={submit} class="space-y-4 max-w-xl">
       {#each editableFields as f}
@@ -103,8 +111,7 @@
         <p class="text-sm text-[var(--color-error-fg)]">{errorMsg}</p>
       {/if}
 
-      <div class="flex items-center gap-2">
-        <Button type="submit" disabled={saving}>{saving ? 'Saving…' : recordId ? 'Save' : 'Create'}</Button>
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-[var(--color-border)]">
         <Button
           type="button"
           variant="ghost"
@@ -112,6 +119,7 @@
         >
           Cancel
         </Button>
+        <Button type="submit" disabled={saving}>{saving ? 'Saving…' : recordId ? 'Save' : 'Create'}</Button>
       </div>
     </form>
   {/if}

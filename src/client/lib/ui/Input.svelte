@@ -9,6 +9,7 @@
     monospace?: boolean;
     name?: string;
     autocomplete?: string;
+    error?: boolean;
     oninput?: (e: Event) => void;
   }
 
@@ -22,6 +23,7 @@
     monospace,
     name,
     autocomplete,
+    error = false,
     oninput,
   }: Props = $props();
 </script>
@@ -36,6 +38,8 @@
   {autocomplete}
   bind:value
   {oninput}
-  class="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:border-[var(--color-text)] disabled:opacity-50 read-only:bg-[var(--color-surface-2)]"
+  class="w-full rounded-md border bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none disabled:opacity-50 read-only:bg-[var(--color-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 {error ? 'border-[var(--color-error-fg)]' : 'border-[var(--color-border)]'}"
   class:font-mono={monospace}
+  style:outline-color={error ? 'var(--color-error-fg)' : 'var(--focus-ring-color)'}
+  style:transition="border-color var(--motion-fast) var(--motion-easing)"
 />

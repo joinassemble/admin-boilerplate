@@ -16,9 +16,29 @@ interface ProxyArgs {
   query: Record<string, string>;
   params: Record<string, string>;
   body?: unknown;
+  /** Deployment env (c.env.ENV). When "production", localhost baseUrls are rejected loudly. */
+  env?: string;
 }
 
 export async function proxyResourceOp(args: ProxyArgs): Promise<Response> {
+  // Fail loudly if a dev-only connection (localhost baseUrl) is invoked in
+  // production. The /_mock/ routes live on this same Worker, and the `mock`
+  // connection ships with baseUrl=http://localhost:8787 — fine in dev, fatal
+  // in prod. Without this guard, a fork that forgets to delete src/connections/
+  // mock.ts before deploying would see opaque 502s as the Worker tries to fetch
+  // localhost from Cloudflare's edge. With it, the operator gets an actionable
+  // error pointing at the exact files to delete.
+  if (args.env === 'production' && /^https?:\/\/localhost(?::\d+)?(?:\/|$)/i.test(args.connection.baseUrl)) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: 'dev_connection_in_production',
+        detail: `Connection "${args.connection.id}" has a localhost baseUrl. Delete src/worker/_mock/, src/connections/mock.ts and the four src/resources/mock-*.ts files before deploying.`,
+      }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
+
   const opConfig = pickOp(args.resource, args.op);
   if (!opConfig) {
     return new Response(JSON.stringify({ ok: false, error: 'op_not_enabled' }), {

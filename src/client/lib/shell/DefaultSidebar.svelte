@@ -13,6 +13,7 @@
     { href: '/settings/access',      label: 'Access' },
     { href: '/settings/users',       label: 'Users' },
     { href: '/settings/audit',       label: 'Audit' },
+    { href: '/design',               label: 'Design system' },
   ];
 </script>
 

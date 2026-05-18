@@ -17,6 +17,7 @@
   import SettingsAccessPage from './routes/SettingsAccessPage.svelte';
   import SettingsUsersPage from './routes/SettingsUsersPage.svelte';
   import SettingsAuditPage from './routes/SettingsAuditPage.svelte';
+  import DesignShowcasePage from './routes/DesignShowcasePage.svelte';
 
   const authedRoutes = {
     '/': Home,
@@ -28,6 +29,7 @@
     '/settings/access': SettingsAccessPage,
     '/settings/users': SettingsUsersPage,
     '/settings/audit': SettingsAuditPage,
+    '/design': DesignShowcasePage,
     '*': Home,
   };
 
