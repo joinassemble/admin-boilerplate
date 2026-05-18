@@ -9,5 +9,15 @@
 
 import type { Resource } from '../worker/resources/types';
 import jsonplaceholderPosts from './jsonplaceholder-posts';
+import mockCustomers from './mock-customers';
+import mockSubscriptions from './mock-subscriptions';
+import mockInvoices from './mock-invoices';
+import mockActivity from './mock-activity';
 
-export const resources: Resource[] = [jsonplaceholderPosts];
+export const resources: Resource[] = [
+  jsonplaceholderPosts,
+  mockCustomers,
+  mockSubscriptions,
+  mockInvoices,
+  mockActivity,
+];
