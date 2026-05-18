@@ -31,6 +31,10 @@ id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 # Defaults — overridden by .dev.vars locally and `wrangler secret`/dashboard in prod.
 ACCESS_POLICY = "allowlist"
 EMAIL_PROVIDER = "console"
+# Deployment env. Local dev + `wrangler deploy --dry-run` see "development".
+# In real prod deploys override with `wrangler deploy --var ENV:production`
+# (or set ENV via the Cloudflare dashboard → Worker → Settings → Variables).
+ENV = "development"
 
 [dev]
 port = 8787

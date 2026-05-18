@@ -72,6 +72,7 @@ export function registerResourceRoutes(app: Hono<{ Bindings: Env }>): void {
       query,
       params,
       body,
+      env: c.env.ENV,
     });
 
     // Audit mutations on success.

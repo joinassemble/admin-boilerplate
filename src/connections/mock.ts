@@ -5,12 +5,23 @@ import { defineConnection } from '../worker/connections/define';
  * Used by the boilerplate's sample resources (customers, subscriptions,
  * invoices, activity) to exercise the design system against realistic data.
  *
- * Forks: delete this file (and the four mock-* resource files) once you
- * have real connections wired up. Also delete src/worker/_mock/.
+ * !! DELETE BEFORE DEPLOYING TO PRODUCTION !!
  *
- * baseUrl is hardcoded for local dev. The /_mock/ paths live on the same
- * Worker; in production you'd point this at your own deployed URL OR just
- * remove the mock entirely.
+ * Forks MUST delete the following before going live:
+ *   - this file (src/connections/mock.ts)
+ *   - src/worker/_mock/ (the dev-only mock routes)
+ *   - src/resources/mock-*.ts (the four sample resources)
+ *   - the `mock` import in src/connections/index.ts
+ *
+ * Why this matters: `baseUrl` is hardcoded to http://localhost:8787 because
+ * the /_mock/ paths live on the same Worker — fine in local dev, fatal in
+ * production. A deployed Worker that still references this connection will
+ * try to fetch http://localhost:8787/_mock/* from inside Cloudflare's edge
+ * and hang / 502. The proxy includes an extra safety net that returns a
+ * loud 503 with `error: "dev_connection_in_production"` if this connection
+ * (or any localhost baseUrl) is ever invoked when ENV === "production", so
+ * you'll see a clear actionable error rather than a confusing failure mode
+ * — but the right answer is to delete this file before deploy.
  *
  * To make this connection appear configured (auth.type=none has no secret),
  * run this once in the browser DevTools console after signing in:
