@@ -56,7 +56,7 @@
 
   {#if loading}
     <dl class="grid grid-cols-[160px_1fr] gap-y-2 text-sm">
-      {#each Array(6) as _}
+      {#each Array(6) as _, i (i)}
         <dt class="text-[var(--color-muted)] text-xs pt-1"><Skeleton width="80%" /></dt>
         <dd><Skeleton width="40%" /></dd>
       {/each}

@@ -12,9 +12,12 @@ const CITIES = ['London', 'Berlin', 'Tokyo', 'New York', 'Paris', 'Sydney', 'Tor
 const PLANS = ['Pro', 'Team', 'Business', 'Enterprise'];
 const STATUSES = ['active', 'past_due', 'canceled', 'trialing'] as const;
 
+// Simple deterministic pseudo-random integer in [0, mod).
+// Note: this Math.sin-based PRNG is biased and clusters near low values —
+// fine for stable demo data, but don't reuse it where you need a uniform
+// distribution.
 function det(seed: number, i: number, mod: number): number {
-  // Simple deterministic pseudo-random.
-  return Math.abs(Math.sin(seed * 9301 + i * 49297) * 233280) % mod;
+  return Math.floor(Math.abs(Math.sin(seed * 9301 + i * 49297) * 233280) % mod);
 }
 
 export interface Customer {
@@ -58,38 +61,38 @@ export interface Activity {
 const NOW = 1726000000; // Stable epoch for deterministic dates.
 
 export const customers: Customer[] = Array.from({ length: 30 }, (_, i) => {
-  const first = FIRST[Math.floor(det(1, i, FIRST.length))]!;
-  const last = LAST[Math.floor(det(2, i, LAST.length))]!;
-  const plan = PLANS[Math.floor(det(3, i, PLANS.length))]!;
+  const first = FIRST[det(1, i, FIRST.length)]!;
+  const last = LAST[det(2, i, LAST.length)]!;
+  const plan = PLANS[det(3, i, PLANS.length)]!;
   return {
     id: `cus_${(i + 1).toString().padStart(4, '0')}`,
     email: `${first.toLowerCase()}.${last.toLowerCase()}@example.com`,
     name: `${first} ${last}`,
-    city: CITIES[Math.floor(det(4, i, CITIES.length))]!,
+    city: CITIES[det(4, i, CITIES.length)]!,
     plan,
-    mrr_cents: Math.floor(det(5, i, 100)) * 100 + 2900,
-    status: STATUSES[Math.floor(det(6, i, STATUSES.length))]!,
-    created_at: NOW - Math.floor(det(7, i, 365 * 86400)),
+    mrr_cents: det(5, i, 100) * 100 + 2900,
+    status: STATUSES[det(6, i, STATUSES.length)]!,
+    created_at: NOW - det(7, i, 365 * 86400),
   };
 });
 
 export const subscriptions: Subscription[] = Array.from({ length: 50 }, (_, i) => {
-  const c = customers[Math.floor(det(10, i, customers.length))]!;
+  const c = customers[det(10, i, customers.length)]!;
   return {
     id: `sub_${(i + 1).toString().padStart(4, '0')}`,
     customer_id: c.id,
     plan: c.plan,
-    status: STATUSES[Math.floor(det(11, i, STATUSES.length))]!,
+    status: STATUSES[det(11, i, STATUSES.length)]!,
     amount_cents: c.mrr_cents,
-    current_period_end: NOW + Math.floor(det(12, i, 30 * 86400)),
+    current_period_end: NOW + det(12, i, 30 * 86400),
     created_at: c.created_at,
   };
 });
 
 export const invoices: Invoice[] = Array.from({ length: 80 }, (_, i) => {
-  const c = customers[Math.floor(det(20, i, customers.length))]!;
-  const status = (['paid', 'paid', 'paid', 'open', 'void'] as const)[Math.floor(det(21, i, 5))]!;
-  const due = NOW - Math.floor(det(22, i, 60 * 86400));
+  const c = customers[det(20, i, customers.length)]!;
+  const status = (['paid', 'paid', 'paid', 'open', 'void'] as const)[det(21, i, 5)]!;
+  const due = NOW - det(22, i, 60 * 86400);
   return {
     id: `inv_${(i + 1).toString().padStart(4, '0')}`,
     customer_id: c.id,
@@ -102,13 +105,13 @@ export const invoices: Invoice[] = Array.from({ length: 80 }, (_, i) => {
 
 const ACTIONS = ['signed_in', 'updated_card', 'plan_upgraded', 'plan_downgraded', 'invoice_paid', 'invoice_failed', 'created_team', 'invited_member'];
 export const activity: Activity[] = Array.from({ length: 100 }, (_, i) => {
-  const c = customers[Math.floor(det(30, i, customers.length))]!;
-  const action = ACTIONS[Math.floor(det(31, i, ACTIONS.length))]!;
+  const c = customers[det(30, i, customers.length)]!;
+  const action = ACTIONS[det(31, i, ACTIONS.length)]!;
   return {
     id: `act_${(i + 1).toString().padStart(5, '0')}`,
     customer_id: c.id,
     action,
     detail: `${c.email} · ${action}`,
-    ts: NOW - Math.floor(det(32, i, 7 * 86400)),
+    ts: NOW - det(32, i, 7 * 86400),
   };
 }).sort((a, b) => b.ts - a.ts); // recent-first

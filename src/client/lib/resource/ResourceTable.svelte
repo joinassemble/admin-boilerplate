@@ -20,6 +20,7 @@
   let rows = $state<Row[]>([]);
   let loading = $state(true);
   let errorMsg = $state<string | null>(null);
+  let errorStatus = $state<number | null>(null);
   let cursor = $state<string | null>(null);
   let hasMore = $state(false);
 
@@ -58,6 +59,7 @@
   async function load(c: string | null = null) {
     loading = true;
     errorMsg = null;
+    errorStatus = null;
     try {
       const path = c
         ? `/api/resources/${resource.id}/list?${resource.list.cursorParam ?? 'starting_after'}=${encodeURIComponent(c)}`
@@ -69,6 +71,7 @@
       hasMore = newRows.length >= 10 && Boolean(resource.list.cursorParam) && Boolean(primaryField);
     } catch (err) {
       if (err instanceof ApiError) {
+        errorStatus = err.status;
         errorMsg = `Failed to load (${err.status})`;
       } else {
         errorMsg = 'Failed to load';
@@ -143,7 +146,7 @@
   {:else if errorMsg}
     <EmptyState
       title="Couldn't load records"
-      description={errorMsg.includes('412')
+      description={errorStatus === 412
         ? `The "${resource.connection}" connection isn't configured yet.`
         : errorMsg}
     />

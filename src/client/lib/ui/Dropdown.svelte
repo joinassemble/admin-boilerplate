@@ -21,6 +21,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent): void {
+    if (!isOpen) return;
     if (e.key === 'Escape') close();
   }
 

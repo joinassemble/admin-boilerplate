@@ -24,13 +24,21 @@
   let customers = $state<Customer[] | null>(null);
   let activity = $state<Activity[] | null>(null);
   let loading = $state(true);
+  let loadError = $state<string | null>(null);
 
   async function load() {
     loading = true;
+    loadError = null;
     try {
       const [cs, ay] = await Promise.all([
-        api<Customer[]>('/api/resources/mock-customers/list').catch(() => []),
-        api<Activity[]>('/api/resources/mock-activity/list').catch(() => []),
+        api<Customer[]>('/api/resources/mock-customers/list').catch((e) => {
+          loadError = String(e);
+          return [];
+        }),
+        api<Activity[]>('/api/resources/mock-activity/list').catch((e) => {
+          loadError = String(e);
+          return [];
+        }),
       ]);
       customers = cs;
       activity = ay;
@@ -71,7 +79,7 @@
 
   {#if loading}
     <div class="grid grid-cols-4 gap-3">
-      {#each Array(4) as _}
+      {#each Array(4) as _, i (i)}
         <div class="border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] p-4 space-y-2">
           <Skeleton width="40%" height="12px" />
           <Skeleton width="60%" height="24px" />
@@ -79,18 +87,26 @@
         </div>
       {/each}
     </div>
-  {:else if !stats || registry.items.length === 0}
+  {:else if registry.items.length === 0}
     <EmptyState
       title="No resources yet"
       description="Add a resource in src/resources/ and register it in src/resources/index.ts. See docs/adding-a-resource.md."
     />
+  {:else if loadError}
+    <EmptyState
+      title="Mock connection not configured"
+      description={`Run this once in the DevTools console: await fetch('/api/connections/mock', {method:'PUT',headers:{'Content-Type':'application/json'},body:'{"type":"none"}'})`}
+    />
+  {:else if !stats}
+    <!-- Unreachable when both fetches succeed; kept as a safety net. -->
+    <EmptyState title="No data" description="Nothing to show." />
   {:else}
     <div class="grid grid-cols-4 gap-3">
       <StatCard label="Total customers" value={stats.total} />
       <StatCard
         label="Active"
         value={stats.active}
-        delta={`${Math.round((stats.active / stats.total) * 100)}% of total`}
+        delta={stats.total > 0 ? `${Math.round((stats.active / stats.total) * 100)}% of total` : '—'}
       />
       <StatCard
         label="MRR"

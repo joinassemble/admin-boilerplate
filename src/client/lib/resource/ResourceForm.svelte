@@ -87,7 +87,7 @@
 
   {#if loading}
     <div class="space-y-4 max-w-xl">
-      {#each Array(4) as _}
+      {#each Array(4) as _, i (i)}
         <div class="space-y-1">
           <Skeleton width="20%" height="12px" />
           <Skeleton width="100%" height="36px" rounded="md" />
