@@ -1,3 +1,7 @@
+# After cloning, replace each REPLACE_WITH_... value with the real ID from
+# `wrangler d1 create admin-boilerplate` and `wrangler kv namespace create ...`.
+# See README.md → Setup for the full walkthrough.
+
 name = "admin-boilerplate"
 main = "src/worker/index.ts"
 compatibility_date = "2026-05-01"
@@ -12,16 +16,16 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "admin-boilerplate"
-database_id = "4d2f8af2-4ecb-46de-bf4f-a97ca39aa917"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "d2852aa2949549d9b5cf307c4d4b14ac"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 [[kv_namespaces]]
 binding = "MAGIC_TOKENS"
-id = "51ad59ddd4e24a129d32d56f4b5bbcea"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 [vars]
 # Defaults — overridden by .dev.vars locally and `wrangler secret`/dashboard in prod.
